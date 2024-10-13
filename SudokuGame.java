@@ -1,92 +1,109 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import java.awt.Component;
-import java.awt.EventQueue;
-import java.awt.GridLayout;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JTextField;
+public class SudokuGame {
+    private JFrame frame;
+    private JTextField[][] cells;
 
-public class SudokuGame extends JFrame {
-   private static final int SIZE = 9;
-   private static final int SUBGRID_SIZE = 3;
-   private JTextField[][] cells = new JTextField[9][9];
-   private int[][] board = new int[][]{{5, 3, 0, 0, 7, 0, 0, 0, 0}, {6, 0, 0, 1, 9, 5, 0, 0, 0}, {0, 9, 8, 0, 0, 0, 0, 6, 0}, {8, 0, 0, 0, 6, 0, 0, 0, 3}, {4, 0, 0, 8, 0, 3, 0, 0, 1}, {7, 0, 0, 0, 2, 0, 0, 0, 6}, {0, 6, 0, 0, 0, 0, 2, 8, 0}, {0, 0, 0, 4, 1, 9, 0, 0, 5}, {0, 0, 0, 0, 8, 0, 0, 7, 9}};
+    public SudokuGame() {
+        frame = new JFrame("Sudoku game");
+        frame.setSize(400, 400);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new GridLayout(9, 9));
 
-   public SudokuGame() {
-      this.initUI();
-   }
-
-   private void initUI() {
-      this.setTitle("Sudoku Game");
-      this.setSize(400, 400);
-      this.setDefaultCloseOperation(3);
-      this.setLocationRelativeTo((Component)null);
-      this.setLayout(new GridLayout(10, 9));
-
-      for(int row = 0; row < 9; ++row) {
-         for(int col = 0; col < 9; ++col) {
-            this.cells[row][col] = new JTextField();
-            if (this.board[row][col] != 0) {
-               this.cells[row][col].setText(String.valueOf(this.board[row][col]));
-               this.cells[row][col].setEditable(false);
+        cells = new JTextField[9][9];
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                cells[i][j] = new JTextField();
+                frame.add(cells[i][j]);
             }
+        }
 
-            this.cells[row][col].setHorizontalAlignment(0);
-            this.add(this.cells[row][col]);
-         }
-      }
-
-      JButton solveButton = new JButton("Solve");
-      solveButton.addActionListener(new(this));
-      this.add(solveButton);
-   }
-
-   private void updateBoard() {
-      for(int row = 0; row < 9; ++row) {
-         for(int col = 0; col < 9; ++col) {
-            this.cells[row][col].setText(String.valueOf(this.board[row][col]));
-         }
-      }
-
-   }
-
-   private boolean solveSudoku(int[][] board) {
-      for(int row = 0; row < 9; ++row) {
-         for(int col = 0; col < 9; ++col) {
-            if (board[row][col] == 0) {
-               for(int num = 1; num <= 9; ++num) {
-                  if (this.isSafe(board, row, col, num)) {
-                     board[row][col] = num;
-                     if (this.solveSudoku(board)) {
-                        return true;
-                     }
-
-                     board[row][col] = 0;
-                  }
-               }
-
-               return false;
+        JButton solveButton = new JButton("Solve");
+        solveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int[][] board = new int[9][9];
+                for (int row = 0; row < 9; row++) {
+                    for (int col = 0; col < 9; col++) {
+                        String text = cells[row][col].getText();
+                        if (!text.equals("")) {
+                            board[row][col] = Integer.parseInt(text);
+                        } else {
+                            board[row][col] = 0;
+                        }
+                    }
+                }
+                if (solveSudoku(board)) {
+                    updateBoard(board);
+                } else {
+                    JOptionPane.showMessageDialog(frame, "No solution exists");
+                }
             }
-         }
-      }
+        });
 
-      return true;
-   }
+        frame.add(solveButton);
+        frame.setVisible(true);
+    }
 
-   private boolean isSafe(int[][] board, int row, int col, int num) {
-      for(int x = 0; x < 9; ++x) {
-         if (board[row][x] == num || board[x][col] == num || board[row - row % 3 + x / 3][col - col % 3 + x % 3] == num) {
-            return false;
-         }
-      }
+    private void updateBoard(int[][] board) {
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                cells[row][col].setText(String.valueOf(board[row][col]));
+            }
+        }
+    }
 
-      return true;
-   }
+    public boolean solveSudoku(int[][] board) {
+        for (int row = 0; row < 9; row++) {
+            for (int col = 0; col < 9; col++) {
+                if (board[row][col] == 0) { // Empty cell
+                    for (int num = 1; num <= 9; num++) {
+                        if (isSafe(board, row, col, num)) {
+                            board[row][col] = num;
+                            if (solveSudoku(board)) {
+                                return true;
+                            }
+                            board[row][col] = 0;
+                        }
+                    }
+                    return false; // Trigger backtracking
+                }
+            }
+        }
+        return true;
+    }
 
-   public static void main(String[] args) {
-      EventQueue.invokeLater(() -> {
-         SudokuGame game = new SudokuGame();
-         game.setVisible(true);
-      });
-   }
+    public boolean isSafe(int[][] board, int row, int col, int num) {
+        // Check row
+        for (int x = 0; x < 9; x++) {
+            if (board[row][x] == num) {
+                return false;
+            }
+        }
+        // Check column
+        for (int x = 0; x < 9; x++) {
+            if (board[x][col] == num) {
+                return false;
+            }
+        }
+        // Check 3x3 subgrid
+        int startRow = row - row % 3, startCol = col - col % 3;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (board[i + startRow][j + startCol] == num) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            new SudokuGame();
+        });
+    }
 }
