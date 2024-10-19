@@ -1,2 +1,2 @@
-# Iwilltry
+# Multigaming
  first project on java.
